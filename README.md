@@ -61,6 +61,12 @@ in your research activity.
 using my deep-learning library. As in Code, I kindly ask you to report a
 .pdf report. Feedbacks are welcome!
 
+## How to run notebooks in presentation mode
+
+I'm using [RISE](https://rise.readthedocs.io/en/stable/) plugin for notebooks.
+
+Just run ``pip install notebook`` and ``pip install RISE`` for installation. Then run jupyter notebook to see added plugin functionalities.
+
 ## Lecturer
 
 [Federico Ruggeri](https://www.unibo.it/sitoweb/federico.ruggeri6) 🍻
