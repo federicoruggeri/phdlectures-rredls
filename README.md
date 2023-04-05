@@ -65,7 +65,9 @@ using my deep-learning library. As in Code, I kindly ask you to report a
 
 I'm using [RISE](https://rise.readthedocs.io/en/stable/) plugin for notebooks.
 
-Just run ``pip install notebook`` and ``pip install RISE`` for installation. Then run jupyter notebook to see added plugin functionalities.
+Just run ``pip install notebook`` and ``pip install RISE`` for installation. 
+
+Then run jupyter notebook to see added plugin functionalities.
 
 ## Lecturer
 
