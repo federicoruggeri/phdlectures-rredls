@@ -104,6 +104,12 @@ if __name__ == '__main__':
                                              os.pardir,
                                              os.pardir,
                                              os.pardir))
+
+    info_save_dir = os.path.join(base_dir,
+                                 'scripting',
+                                 'lecture_three',
+                                 'runtime_data')
+
     log_dir = os.path.join(base_dir, 'logs')
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
@@ -163,5 +169,5 @@ if __name__ == '__main__':
         {memory_info}
         ''')
     if save_info:
-        np.save(info_basename.format(prefetch, 'timing'), timing_info)
-        np.save(info_basename.format(prefetch, 'memory'), memory_info)
+        np.save(os.path.join(info_save_dir, info_basename.format(prefetch, 'timing')), timing_info)
+        np.save(os.path.join(info_save_dir, info_basename.format(prefetch, 'memory')), memory_info)

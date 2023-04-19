@@ -78,7 +78,7 @@ def simulate_iterator(
                                               "debug": debug}))
     end_time = time.perf_counter()
     total_time = end_time - start_time
-    return total_time, mem_usage
+    return total_time, np.mean(mem_usage)
 
 
 def compare_methods_timing(
@@ -102,7 +102,7 @@ def compare_methods_timing(
     data = pd.DataFrame.from_records(data=valid_data)
 
     fig, ax = plt.subplots(1, 1)
-    width = 0.25
+    width = 0.15
 
     x_labels = ['test', 'val', 'test']
     x_values = np.arange(len(x_labels))
@@ -139,24 +139,21 @@ def compare_methods_memory_usage(
     identifiers = [identifiers[index] for index in valid_indexes]
 
     data = pd.DataFrame.from_records(data=valid_data)
-    data_splits = ['train', 'val', 'test']
 
-    fig, axes = plt.subplots(len(data_splits), 1)
+    fig, ax = plt.subplots(1, 1)
+    width = 0.15
 
-    cmap = cm.ScalarMappable(cmap='rainbow')
-    for idx, (ax, data_split) in enumerate(zip(axes, data_splits)):
-        bp = ax.boxplot(x=data[data_split],
-                        patch_artist=True,
-                        vert=True,
-                        showmeans=True)
-        for patch, color in zip(bp['boxes'], cmap.to_rgba(x=[np.mean(seq) for seq in data[data_split]])):
-            patch.set_facecolor(color)
+    x_labels = ['test', 'val', 'test']
+    x_values = np.arange(len(x_labels))
+    for row_idx, row in data.iterrows():
+        offset = width * row_idx
+        rects = ax.bar(x_values + offset, row.values, width)
+        ax.bar_label(rects, padding=3)
 
-        if idx == 0:
-            ax.set_title('Memory usage comparison')
-            ax.legend(bp['boxes'], identifiers, loc='best')
+    ax.set_title('Memory usage comparison')
 
-        ax.set_xlabel('Data Split')
-        ax.set_ylabel('Mem Usage (MiB)')
-
+    ax.set_ylabel('Mem Usage (MiB)')
+    ax.set_xlabel('Data split')
+    ax.set_xticks(x_values + width / data.shape[0], x_labels)
+    ax.legend(identifiers, loc='best')
     plt.show()

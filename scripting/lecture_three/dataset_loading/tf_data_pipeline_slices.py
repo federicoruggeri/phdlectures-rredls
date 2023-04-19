@@ -87,6 +87,11 @@ if __name__ == '__main__':
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir)
 
+    info_save_dir = os.path.join(base_dir,
+                                 'scripting',
+                                 'lecture_three',
+                                 'runtime_data')
+
     Logger.set_log_path(name='logger',
                         log_path=log_dir)
     logger = Logger.get_logger(__name__)
@@ -142,5 +147,5 @@ if __name__ == '__main__':
         {memory_info}
         ''')
     if save_info:
-        np.save(info_basename.format(prefetch, 'timing'), timing_info)
-        np.save(info_basename.format(prefetch, 'memory'), memory_info)
+        np.save(os.path.join(info_save_dir, info_basename.format(prefetch, 'timing')), timing_info)
+        np.save(os.path.join(info_save_dir, info_basename.format(prefetch, 'memory')), memory_info)
