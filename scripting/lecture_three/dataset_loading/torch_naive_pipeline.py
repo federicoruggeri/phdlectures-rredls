@@ -3,7 +3,7 @@ from typing import Iterator
 
 import numpy as np
 import pandas as pd
-from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import Dataset
 from torchtext.data import get_tokenizer
 from collections import Counter
 from torchtext.vocab import Vocab
