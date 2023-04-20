@@ -92,7 +92,8 @@ class Preprocessor:
 
     def get_steps(
             self,
-            data: np.ndarray
+            data: np.ndarray,
+            batch_size: int
     ) -> int:
         num_batches = int(np.ceil(len(data) / batch_size))
         return num_batches
@@ -215,7 +216,7 @@ class Preprocessor:
         if prefetch:
             data = data.prefetch(buffer_size=tf.data.AUTOTUNE)
 
-        return data
+        return iter(data)
 
 
 if __name__ == '__main__':
@@ -262,7 +263,8 @@ if __name__ == '__main__':
     timing_info = {}
     memory_info = {}
 
-    train_steps = preprocessor.get_steps(data=train_df['Sentence'].values)
+    train_steps = preprocessor.get_steps(data=train_df['Sentence'].values,
+                                         batch_size=batch_size)
     train_iterator = partial(preprocessor.make_iterator,
                              df=train_df,
                              suffix='train',
@@ -276,7 +278,8 @@ if __name__ == '__main__':
                                                                    description='train iterator',
                                                                    simulation_time=simulation_time)
 
-    val_steps = preprocessor.get_steps(data=val_df['Sentence'].values)
+    val_steps = preprocessor.get_steps(data=val_df['Sentence'].values,
+                                       batch_size=batch_size)
     val_iterator = partial(preprocessor.make_iterator,
                            df=val_df,
                            suffix='val',
@@ -289,7 +292,8 @@ if __name__ == '__main__':
                                                                description='val iterator',
                                                                simulation_time=simulation_time)
 
-    test_steps = preprocessor.get_steps(data=test_df['Sentence'].values)
+    test_steps = preprocessor.get_steps(data=test_df['Sentence'].values,
+                                        batch_size=batch_size)
     test_iterator = partial(preprocessor.make_iterator,
                             df=test_df,
                             suffix='test',

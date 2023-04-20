@@ -1,15 +1,15 @@
-import time
-
-from memory_profiler import memory_usage
-from typing import Callable, List, AnyStr, Iterator
-from scripting.utility.logging_utility import Logger
+import os
 import random
+import time
+from typing import Callable, List, AnyStr, Iterator
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import os
-import matplotlib.pyplot as plt
-import matplotlib.cm as cm
+from memory_profiler import memory_usage
 from tqdm import tqdm
+
+from scripting.utility.logging_utility import Logger
 
 
 def evaluate_time(
@@ -48,18 +48,35 @@ def _simulate(
     for epoch in range(epochs):
         epoch_iterator = iterator()
         with tqdm(total=steps) as pbar:
-            for it_counter, (batch_text, batch_labels) in enumerate(epoch_iterator):
+            for step in range(steps):
+                batch = next(epoch_iterator)
                 time.sleep(simulation_time)
 
                 # Debug
-                if it_counter == 0 and debug:
+                if step == 0 and debug:
                     Logger.get_logger(__name__).info(f'''
-                        Batch text: {batch_text} ({batch_text.shape})
-                        Batch labels: {batch_labels} ({batch_labels.shape})
+                        Batch: {batch})
                     ''')
 
                 pbar.set_description(desc=f'Simulating {description} -- Epoch {epoch + 1}')
                 pbar.update(1)
+
+
+def run_iterator(
+        iterator: Iterator,
+        takes: int = 3,
+):
+    logger = Logger.get_logger(__name__)
+
+    logger.info(f'Showing {takes} iterator takes...')
+    for _ in range(takes):
+        logger.info(next(iterator))
+
+    header = '*' * 50
+    logger.info(f'''{header}
+
+            {header}
+            ''')
 
 
 def simulate_iterator(

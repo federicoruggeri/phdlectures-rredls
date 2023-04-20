@@ -1,4 +1,5 @@
 import os
+from functools import partial
 from typing import Dict
 
 import numpy as np
@@ -7,9 +8,8 @@ import tensorflow as tf
 from keras.layers import TextVectorization
 
 from scripting.lecture_three.dataset_loading.ibm2015_loader import load_ibm2015_dataset
-from scripting.utility.benchmarking_utility import fix_seed, simulate_iterator
+from scripting.utility.benchmarking_utility import fix_seed, run_iterator
 from scripting.utility.logging_utility import Logger
-from functools import partial
 
 
 class Preprocessor:
@@ -39,8 +39,7 @@ class Preprocessor:
 
     def get_steps(
             self,
-            data: np.ndarray,
-            batch_size: int
+            data: np.ndarray
     ) -> int:
         num_batches = int(np.ceil(len(data) / batch_size))
         return num_batches
@@ -78,20 +77,22 @@ if __name__ == '__main__':
     prefetch = True
     info_basename = 'tf_data_pipeline_slices_{0}_{1}.npy'
     save_info = True
+    batches_to_take = 3
 
     this_path = os.path.dirname(os.path.abspath(__file__))
     base_dir = os.path.normpath(os.path.join(this_path,
                                              os.pardir,
                                              os.pardir,
                                              os.pardir))
-    log_dir = os.path.join(base_dir, 'logs')
-    if not os.path.isdir(log_dir):
-        os.makedirs(log_dir)
 
     info_save_dir = os.path.join(base_dir,
                                  'scripting',
                                  'lecture_three',
                                  'runtime_data')
+
+    log_dir = os.path.join(base_dir, 'logs')
+    if not os.path.isdir(log_dir):
+        os.makedirs(log_dir)
 
     Logger.set_log_path(name='logger',
                         log_path=log_dir)
@@ -110,46 +111,26 @@ if __name__ == '__main__':
     timing_info = {}
     memory_info = {}
 
-    train_steps = preprocessor.get_steps(data=train_df['Sentence'].values,
-                                         batch_size=batch_size)
+    train_steps = preprocessor.get_steps(data=train_df['Sentence'].values)
     train_iterator = partial(preprocessor.make_iterator,
                              df=train_df,
                              batch_size=batch_size,
                              prefetch=prefetch,
                              shuffle=True)
-    timing_info['train'], memory_info['train'] = simulate_iterator(iterator=train_iterator,
-                                                                   steps=train_steps,
-                                                                   description='train iterator',
-                                                                   simulation_time=simulation_time)
+    train_iterator = train_iterator()
 
-    val_steps = preprocessor.get_steps(data=val_df['Sentence'].values,
-                                       batch_size=batch_size)
-    val_iterator = partial(preprocessor.make_iterator,
-                           df=val_df,
-                           prefetch=prefetch,
-                           batch_size=batch_size)
-    timing_info['val'], memory_info['val'] = simulate_iterator(iterator=val_iterator,
-                                                               steps=val_steps,
-                                                               description='val iterator',
-                                                               simulation_time=simulation_time)
+    ckpt = tf.train.Checkpoint(step=tf.Variable(0), iterator=train_iterator)
+    manager = tf.train.CheckpointManager(ckpt, os.path.join(info_save_dir, 'tf_data_pipeline_slices_ckpt'), max_to_keep=2)
 
-    test_steps = preprocessor.get_steps(data=test_df['Sentence'].values,
-                                        batch_size=batch_size)
-    test_iterator = partial(preprocessor.make_iterator,
-                            df=test_df,
-                            prefetch=prefetch,
-                            batch_size=batch_size)
-    timing_info['test'], memory_info['test'] = simulate_iterator(iterator=test_iterator,
-                                                                 steps=test_steps,
-                                                                 description='test iterator',
-                                                                 simulation_time=simulation_time)
+    run_iterator(iterator=train_iterator,
+                 takes=batches_to_take)
 
-    logger.info(f'''Times:
-        {timing_info}
-        ''')
-    logger.info(f'''Memory usage:
-        {memory_info}
-        ''')
-    if save_info:
-        np.save(os.path.join(info_save_dir, info_basename.format(prefetch, 'timing')), timing_info)
-        np.save(os.path.join(info_save_dir, info_basename.format(prefetch, 'memory')), memory_info)
+    save_path = manager.save()
+
+    run_iterator(iterator=train_iterator,
+                 takes=batches_to_take)
+
+    ckpt.restore(manager.latest_checkpoint)
+
+    run_iterator(iterator=train_iterator,
+                 takes=batches_to_take)

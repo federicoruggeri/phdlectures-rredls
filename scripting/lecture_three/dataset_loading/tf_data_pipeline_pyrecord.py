@@ -167,7 +167,7 @@ class Preprocessor:
         if prefetch:
             data = data.prefetch(buffer_size=tf.data.AUTOTUNE)
 
-        return data
+        return iter(data)
 
 
 if __name__ == '__main__':

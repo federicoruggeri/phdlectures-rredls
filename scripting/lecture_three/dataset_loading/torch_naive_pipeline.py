@@ -1,18 +1,16 @@
 import os
+from collections import Counter
+from functools import partial
 from typing import Iterator
 
 import numpy as np
 import pandas as pd
-from torch.utils.data import Dataset
 from torchtext.data import get_tokenizer
-from collections import Counter
 from torchtext.vocab import Vocab
-
 
 from scripting.lecture_three.dataset_loading.ibm2015_loader import load_ibm2015_dataset
 from scripting.utility.benchmarking_utility import fix_seed, simulate_iterator
 from scripting.utility.logging_utility import Logger
-from functools import partial
 
 
 class Preprocessor:
