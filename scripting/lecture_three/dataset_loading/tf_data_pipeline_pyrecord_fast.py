@@ -179,7 +179,6 @@ class Preprocessor:
 
         return example
 
-    # Note: the tf.data.Dataset.from_generator and self._make_iterator must be executed by the same python process!
     def make_iterator(
             self,
             df: pd.DataFrame,
