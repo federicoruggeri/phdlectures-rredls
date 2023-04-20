@@ -1,21 +1,19 @@
 import os
+from functools import partial
 from typing import Iterator, List, Tuple, AnyStr
 
 import numpy as np
 import pandas as pd
 import torch
-from torchdata.datapipes.iter import TFRecordLoader, FileLister, FileOpener
-from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader
+from torchdata.datapipes.iter import TFRecordLoader, FileLister, FileOpener
 from torchtext.data import get_tokenizer
-from collections import Counter
-from torchtext.vocab import Vocab
-
+from torchtext.vocab import build_vocab_from_iterator
 
 from scripting.lecture_three.dataset_loading.ibm2015_loader import load_ibm2015_dataset
 from scripting.utility.benchmarking_utility import fix_seed, simulate_iterator
 from scripting.utility.logging_utility import Logger
-from functools import partial
 
 
 class Preprocessor:
@@ -33,11 +31,8 @@ class Preprocessor:
             train_df: pd.DataFrame
     ):
         texts = train_df['Sentence'].values
-        texts = list(map(lambda t: self.preprocess_text(t), texts))
-        counter = Counter()
-        for text in texts:
-            counter.update(self.tokenizer(text))
-        self.vocab = Vocab(counter)
+        texts = map(lambda t: self.tokenizer(self.preprocess_text(t)), texts)
+        self.vocab = build_vocab_from_iterator(iterator=texts, specials=['<UNK>'])
 
     def preprocess_text(
             self,
@@ -53,7 +48,7 @@ class Preprocessor:
     ) -> [List[int], int]:
         text, label = input_data
         text = self.preprocess_text(text=text)
-        tokens = [self.vocab[token] for token in self.tokenizer(text)]
+        tokens = self.vocab(self.tokenizer(text))
         return tokens, label
 
     def get_steps(
@@ -96,7 +91,7 @@ class Preprocessor:
 
         data = data.sharding_filter()
         data = DataLoader(data,
-                          shuffle=shuffle,      # ensures the previous shuffle works (??)
+                          shuffle=shuffle,  # ensures the previous shuffle works (??)
                           batch_size=batch_size,
                           num_workers=num_workers,
                           collate_fn=self.batch_data)

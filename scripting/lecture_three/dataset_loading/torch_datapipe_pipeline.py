@@ -1,21 +1,19 @@
 import os
+from functools import partial
 from typing import Iterator, List, Tuple
 
 import numpy as np
 import pandas as pd
 import torch
-from torchdata.datapipes.iter import IterableWrapper
-from torch.utils.data import DataLoader
 from torch.nn.utils.rnn import pad_sequence
+from torch.utils.data import DataLoader
+from torchdata.datapipes.iter import IterableWrapper
 from torchtext.data import get_tokenizer
-from collections import Counter
-from torchtext.vocab import Vocab
-
+from torchtext.vocab import build_vocab_from_iterator
 
 from scripting.lecture_three.dataset_loading.ibm2015_loader import load_ibm2015_dataset
 from scripting.utility.benchmarking_utility import fix_seed, simulate_iterator
 from scripting.utility.logging_utility import Logger
-from functools import partial
 
 
 class Preprocessor:
@@ -31,11 +29,8 @@ class Preprocessor:
             train_df: pd.DataFrame
     ):
         texts = train_df['Sentence'].values
-        texts = list(map(lambda t: self.preprocess_text(t), texts))
-        counter = Counter()
-        for text in texts:
-            counter.update(self.tokenizer(text))
-        self.vocab = Vocab(counter)
+        texts = map(lambda t: self.tokenizer(self.preprocess_text(t)), texts)
+        self.vocab = build_vocab_from_iterator(iterator=texts, specials=['<UNK>'])
 
     def preprocess_text(
             self,
@@ -51,12 +46,13 @@ class Preprocessor:
     ) -> [List[int], int]:
         text, label = input_data
         text = self.preprocess_text(text=text)
-        tokens = [self.vocab[token] for token in self.tokenizer(text)]
+        tokens = self.vocab(self.tokenizer(text))
         return tokens, label
 
     def get_steps(
             self,
-            data: np.ndarray
+            data: np.ndarray,
+            batch_size: int
     ) -> int:
         num_batches = int(np.ceil(len(data) / batch_size))
         return num_batches
@@ -102,7 +98,7 @@ class Preprocessor:
 
         data = data.map(fn=self.parse_inputs)
         data = DataLoader(data,
-                          shuffle=shuffle,      # ensures the previous shuffle works (??)
+                          shuffle=shuffle,  # ensures the previous shuffle works (??)
                           batch_size=batch_size,
                           num_workers=num_workers,
                           collate_fn=self.batch_data)
@@ -113,7 +109,7 @@ if __name__ == '__main__':
     # Settings
     samples_amount = -1
     batch_size = 32
-    num_workers = 4
+    num_workers = 1
     random_seed = 42
     simulation_time = 0.001
     info_basename = 'torch_datapipe_pipeline_{}.npy'
@@ -150,7 +146,8 @@ if __name__ == '__main__':
     timing_info = {}
     memory_info = {}
 
-    train_steps = preprocessor.get_steps(data=train_df['Sentence'].values)
+    train_steps = preprocessor.get_steps(data=train_df['Sentence'].values,
+                                         batch_size=batch_size)
     train_iterator = partial(preprocessor.make_iterator,
                              df=train_df,
                              batch_size=batch_size,
@@ -161,7 +158,8 @@ if __name__ == '__main__':
                                                                    description='train iterator',
                                                                    simulation_time=simulation_time)
 
-    val_steps = preprocessor.get_steps(data=val_df['Sentence'].values)
+    val_steps = preprocessor.get_steps(data=val_df['Sentence'].values,
+                                       batch_size=batch_size)
     val_iterator = partial(preprocessor.make_iterator,
                            df=val_df,
                            num_workers=num_workers,
@@ -171,7 +169,8 @@ if __name__ == '__main__':
                                                                description='val iterator',
                                                                simulation_time=simulation_time)
 
-    test_steps = preprocessor.get_steps(data=test_df['Sentence'].values)
+    test_steps = preprocessor.get_steps(data=test_df['Sentence'].values,
+                                        batch_size=batch_size)
     test_iterator = partial(preprocessor.make_iterator,
                             df=test_df,
                             num_workers=num_workers,

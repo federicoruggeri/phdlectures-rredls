@@ -1,12 +1,11 @@
 import os
-from collections import Counter
 from functools import partial
 from typing import Iterator
 
 import numpy as np
 import pandas as pd
 from torchtext.data import get_tokenizer
-from torchtext.vocab import Vocab
+from torchtext.vocab import build_vocab_from_iterator
 
 from scripting.lecture_three.dataset_loading.ibm2015_loader import load_ibm2015_dataset
 from scripting.utility.benchmarking_utility import fix_seed, simulate_iterator
@@ -26,11 +25,8 @@ class Preprocessor:
             train_df: pd.DataFrame
     ):
         texts = train_df['Sentence'].values
-        texts = list(map(lambda t: self.preprocess_text(t), texts))
-        counter = Counter()
-        for text in texts:
-            counter.update(self.tokenizer(text))
-        self.vocab = Vocab(counter)
+        texts = map(lambda t: self.tokenizer(self.preprocess_text(t)), texts)
+        self.vocab = build_vocab_from_iterator(iterator=texts, specials=['<UNK>'])
 
     def preprocess_text(
             self,
@@ -48,7 +44,7 @@ class Preprocessor:
         labels = df['Label'].values
 
         texts = list(map(lambda t: self.preprocess_text(t), texts))
-        texts = list(map(lambda t: [self.vocab[token] for token in self.tokenizer(t)], texts))
+        texts = list(map(lambda t: self.vocab(self.tokenizer(t)), texts))
         return np.array(texts, dtype=object), labels
 
     def get_steps(
