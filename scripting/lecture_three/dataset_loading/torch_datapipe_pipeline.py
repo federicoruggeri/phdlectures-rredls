@@ -30,7 +30,8 @@ class Preprocessor:
     ):
         texts = train_df['Sentence'].values
         texts = map(lambda t: self.tokenizer(self.preprocess_text(t)), texts)
-        self.vocab = build_vocab_from_iterator(iterator=texts, specials=['<UNK>'])
+        self.vocab = build_vocab_from_iterator(iterator=texts, specials=["<UNK>"])
+        self.vocab.set_default_index(self.vocab['<UNK>'])
 
     def preprocess_text(
             self,
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     # Settings
     samples_amount = -1
     batch_size = 32
-    num_workers = 1
+    num_workers = 4
     random_seed = 42
     simulation_time = 0.001
     info_basename = 'torch_datapipe_pipeline_{}.npy'

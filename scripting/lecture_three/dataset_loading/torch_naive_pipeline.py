@@ -26,7 +26,8 @@ class Preprocessor:
     ):
         texts = train_df['Sentence'].values
         texts = map(lambda t: self.tokenizer(self.preprocess_text(t)), texts)
-        self.vocab = build_vocab_from_iterator(iterator=texts, specials=['<UNK>'])
+        self.vocab = build_vocab_from_iterator(iterator=texts, specials=["<UNK>"])
+        self.vocab.set_default_index(self.vocab['<UNK>'])
 
     def preprocess_text(
             self,

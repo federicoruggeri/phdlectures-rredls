@@ -33,6 +33,7 @@ class Preprocessor:
         texts = train_df['Sentence'].values
         texts = map(lambda t: self.tokenizer(self.preprocess_text(t)), texts)
         self.vocab = build_vocab_from_iterator(iterator=texts, specials=['<UNK>'])
+        self.vocab.set_default_index(self.vocab['<UNK>'])
 
     def preprocess_text(
             self,
@@ -148,6 +149,7 @@ if __name__ == '__main__':
     timing_info['train'], memory_info['train'] = simulate_iterator(iterator=train_iterator,
                                                                    steps=train_steps,
                                                                    description='train iterator',
+                                                                   debug=True,
                                                                    simulation_time=simulation_time)
 
     val_steps = preprocessor.get_steps(data=val_df['Sentence'].values)
